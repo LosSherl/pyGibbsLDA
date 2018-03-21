@@ -9,7 +9,10 @@ class strtokenizer(object):
 		self.cnt = len(self.tokens)
 
 	def parse(self,string,seperator = " "):
-		self.tokens = string.split()
+		if seperator != " ":
+			self.tokens = string.split(seperator)
+		else:
+			self.tokens = string.split()
 
 	def count_tokens(self):
 		return self.cnt

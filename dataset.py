@@ -21,11 +21,11 @@ class dataset(object):
 
 	def add_doc(self,doc,idx):
 		if 0 <= idx and idx < self.M:
-			self.docs = doc
+			self.docs[idx] = doc
 
 	def _add_doc(self,doc,idx):
 		if 0 <= idx and idx < self.M:
-			self._docs = doc
+			self._docs[idx] = doc
 
 	@staticmethod
 	def write_wordmap(wordmapfile,pword2id):
