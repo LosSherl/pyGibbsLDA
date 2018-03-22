@@ -90,7 +90,7 @@ class model(object):
 		filename = self.directory + model_name + self.tassign_suffix;
 		fin = open(filename,"r")
 
-		z = [0] * self.M
+		self.z = [0] * self.M
 		self.ptrndata = dataset(self.M)
 		self.ptrndata.V = self.V
 
@@ -189,26 +189,26 @@ class model(object):
 		if self.twords > self.V:
 			self.twords = self.V
     	
-    	for k in range(self.K):
-    		words_probs = []
-    		for w in range(self.V):
-    			word_prob = (w,self.phi[k][w])
-    			words_probs.append(word_prob)
+		for k in range(self.K):
+			words_probs = []
+			for w in range(self.V):
+				word_prob = (w,self.phi[k][w])
+				words_probs.append(word_prob)
 
-    		utils.quicksort(words_probs,0,len(words_probs) - 1)
+			utils.quicksort(words_probs,0,len(words_probs) - 1)
 
-    		fout.write("Topic %dth:\n" % k)
+			fout.write("Topic %dth:\n" % k)
 
-    		for i in range(self.twords):
-    			if self.id2word.get(words_probs[i][0]):
-    				fout.write("\t%s   %f\n" % (self.id2word[words_probs[i][0]],words_probs[i][1]))
-    
-        fout.close()
- 
-    	return 0
+			for i in range(self.twords):
+				if self.id2word.get(words_probs[i][0]):
+					fout.write("\t%s   %f\n" % (self.id2word[words_probs[i][0]],words_probs[i][1]))
+	
+		fout.close()
 
-    def save_inf_model(self,model_name):
-    	if self.save_inf_model_tassign(self.directory + model_name + self.tassign_suffix):
+		return 0
+
+	def save_inf_model(self,model_name):
+		if self.save_inf_model_tassign(self.directory + model_name + self.tassign_suffix):
 			return 1
 
 		if self.save_inf_model_others(self.directory + model_name + self.others_suffix):
@@ -275,89 +275,378 @@ class model(object):
 		fout = open(filename,"w")
 		if self.twords > self.newV:
 			self.twords = self.newV
-    	
-    	for k in range(self.K):
-    		words_probs = []
-    		for w in range(self.newV):
-    			word_prob = (w,self.newphi[k][w])
-    			words_probs.append(word_prob)
+		
+		for k in range(self.K):
+			words_probs = []
+			for w in range(self.newV):
+				word_prob = (w,self.newphi[k][w])
+				words_probs.append(word_prob)
 
-    		utils.quicksort(words_probs,0,len(words_probs) - 1)
+			utils.quicksort(words_probs,0,len(words_probs) - 1)
 
-    		fout.write("Topic %dth:\n" % k)
-    		
-    		for i in range(self.twords):
-    			if pnewdata._id2id.get(words_probs[i][0]):
-    				_it = pnewdata._id2id[words_probs[i][0]]
-    				if self.id2word.get(_it):
-    					fout.write("\t%s   %f\n" % (self.id2word[_it],words_probs[i][1]))
+			fout.write("Topic %dth:\n" % k)
+			
+			for i in range(self.twords):
+				if pnewdata._id2id.get(words_probs[i][0]):
+					_it = pnewdata._id2id[words_probs[i][0]]
+					if self.id2word.get(_it):
+						fout.write("\t%s   %f\n" % (self.id2word[_it],words_probs[i][1]))
         
-        fout.close()
+		fout.close()
  
-    	return 0
+		return 0
 
-    def init_est(self):
-    	p = [0] * self.K
+	def init_est(self):
+		self.p = [0] * self.K
 
-    	self.ptrndata = dataset()
-    	if self.ptrndata.read_trndata(self.directory + self.dfile + self.wordmapfile):
-    		print "Fail to read training data!\n"
-    		return 1
+		self.ptrndata = dataset()
+		if self.ptrndata.read_trndata(self.directory + self.dfile + self.wordmapfile):
+			print "Fail to read training data!\n"
+			return 1
 
-  		self.M = self.ptrndata.M
-  		self.V = self.ptrndata.V
+		self.M = self.ptrndata.M
+		self.V = self.ptrndata.V
 
-		nw = [0] * self.V
+		self.nw = [0] * self.V
 
 		for w in range(self.V):
-			nw[w] = [0] * self.K
+			self.nw[w] = [0] * self.K
 			for k in range(self.K):
-				nw[w][k] = 0
+				self.nw[w][k] = 0
 
-    	nd = [0] * self.M
+		self.nd = [0] * self.M
 
-    	for m in range(self.M):
-    		nd[m] = [0] * self.K
-    		for k in range(self.K):
-    			nd[m][k] = 0
+		for m in range(self.M):
+			self.nd[m] = [0] * self.K
+			for k in range(self.K):
+				self.nd[m][k] = 0
 	
-	    nwsum = [0] * self.K
+		self.nwsum = [0] * self.K
 
-	    for k in range(self.K):
-	    	nwsum[k] = 0
+		for k in range(self.K):
+			self.nwsum[k] = 0
 	
-   		ndsum = [0] * M
+		self.ndsum = [0] * M
 
-   		for m in range(self.M):
-   			ndsum[m] = 0
+		for m in range(self.M):
+			self.ndsum[m] = 0
 
-   		z = [0] * self.M
+		self.z = [0] * self.M
 
-   		for m in range(self.ptrndata.M):
-   			N = self.ptrndata.docs[m].length()
-   			z[m] = [0] * N
+		for m in range(self.ptrndata.M):
+			N = self.ptrndata.docs[m].length()
+			self.z[m] = [0] * N
 
-   			for n in range(N):
-   				topic = int(random.random() * self.K)
-   				z[m][n] = topic
+			for n in range(N):
+				topic = int(random.random() * self.K)
+				self.z[m][n] = topic
 
-   				# word i 被赋予topic j的次数	
-   				nw[self.ptrndata.docs[m].words[n]][topic] += 1
-   				# document i 中的单词被赋予topic j的次数
-   				nd[m][topic] += 1
-   				# 被赋予topic j的单词总数
-   				nwsum[topic] += 1
+				# word i 被赋予topic j的次数	
+				self.nw[self.ptrndata.docs[m].words[n]][topic] += 1
+				# document i 中的单词被赋予topic j的次数
+				self.nd[m][topic] += 1
+				# 被赋予topic j的单词总数
+				self.nwsum[topic] += 1
 
-   			# document i的单词总数
-   			ndsum[m] = N
+			# document i的单词总数
+			self.ndsum[m] = N
 	
-        self.theta = [0] * self.M
-        for m in range(self.M):
-        	self.theta[m] = [0] * self.K 
-   		
-   		self.phi = [0] * self.K
-   		for k in range(self.K):
-   			self.phi[k] = [0] * self.V
+		self.theta = [0] * self.M
+		for m in range(self.M):
+			self.theta[m] = [0] * self.K 
+		
+		self.phi = [0] * self.K
+		for k in range(self.K):
+			self.phi[k] = [0] * self.V
 	
-    
-  		return 0;
+	
+		return 0
+
+  	def init_estc(self):
+  		self.p = [0] * self.K
+
+  		if self.load_model(self.model_name):
+  			print "Fail to load word-topic assignmetn file of the model!\n"
+  			return 1
+
+  		self.nw = [0] * self.V
+  		for w in range(self.V):
+  			self.nw[w] = [0] * self.K
+  			for k in range(self.K):
+  				self.nw[w][k] = 0
+
+  		self.nd = [0] * self.M
+  		for m in range(self.M):
+  			self.nd = [0] * self.K
+			for k in range(self.K):
+				self.nd[m][k] = 0
+
+		self.nwsum = [0] * self.K
+		for k in range(self.K):
+			self.nwsum[k] = 0
+		
+		self.ndsum = [0] * self.M
+		for m in range(self.M):
+			self.ndsum[m] = 0
+    	
+		for m in range(self.ptrndata.M):
+			N = self.ptrndata.docs[m].length
+			for n in range(N):
+				w = self.ptrndata.docs[m].words[n]
+				topic = self.z[m][n]
+
+				# word i被赋予topic j的次数
+				self.nw[w][topic] += 1
+				# document i中的单词被赋予topic j的次数
+				self.nd[m][topic] += 1
+				# 被赋予topic j的单词总数
+				self.nwsum[topic] += 1
+
+    		# document i的单词总数
+    		self.ndsum[m] = N
+
+		self.theta = [0] * self.M
+		for m in range(self.M):
+			self.theta[m] = [0] * self.K
+
+		self.phi = [0] * self.K
+		for k in range(self.K):
+			self.phi[k] = [0] * self.V
+	
+		return 0
+
+	def estimate(self):
+		if self.twords > 0:
+			dataset.read_wordmap(self.directory + self.wordmapfile,self.id2word)
+
+		print "Sampling %d iterations!\n" % niters
+
+		last_iter = self.liter
+
+		for self.liter in range(last_iter + 1,self.niters + last_iter + 1):
+			print "Iteration %d ...\n" % self.liter
+
+			for m in range(self.M):
+				for n in range(self.ptrndata.docs[m].length):
+					topic = self.sampling(m,n)
+					self.z[m][n] = topic
+
+			if self.savestep > 0:
+				if self.liter % self.savestep == 0:
+					print "Saving the model at iteration %d ...\n" % liter
+					self.compute_theta()
+					self.compute_phiq
+					self.save_model(utils.generate_model_name(self.liter))
+
+
+ 		print "Gibbs sampling completed!\n"
+ 		print "Saving the final model!\n"
+
+		self.compute_theta()
+		self.compute_phi()
+		self.liter -= 1
+		self.save_model(utils.generate_model_name(-1))
+
+	def sampling(self,m,n):
+		topic = self.z[m][n]
+		w = self.ptrndata.docs[m].words[n]
+		self.nw[w][topic] -= 1
+		self.nd[m][topic] -= 1
+		self.nwsum[topic] -= 1
+		self.ndsum[m] -= 1
+
+		Vbeta = self.V * self.beta
+		Kalpha = self.K * self.alpha
+
+		for k in range(self.K):
+			self.p[k] = (self.nw[w][k] + self.beta) / (self.nwsum[k] + Vbeta) * (self.nd[m][k] + self.alpha) / (self.ndsum[m] + Kalpha)
+
+		for k in range(1,self.K):
+			self.p[k] += self.p[k - 1]
+
+		u = random.random() * p[self.K - 1]
+
+		for topic in range(self.K):
+			if self.p[topic] > u:
+				break
+
+		self.nw[w][topic] += 1
+		self.nd[m][topic] += 1
+		self.nwsum[topic] += 1
+		self.ndsum[m] += 1
+	
+		return topic
+
+	def compute_theta(self):
+		for m in range(self.M):
+			for k in range(self.K):
+				self.theta[m][k] = (self.nd[m][k] + self.alpha) / (self.ndsum[m] + self.K * self.alpha)
+
+
+	def compute_phi(self):
+		for k in range(self.K):
+			for w in range(self.V):
+				self.phi[k][w] = (self.nw[w][k] + self.beta) / (self.nwsum[k] + self.V * self.beta)
+
+	def init_inf(self):
+		self.p = [0] * self.K
+
+		if self.load_model(self.model_name):
+			print "Fail to load word-topic assignmetn file of the model!\n"
+			return 1
+	
+		self.nw = [0] * self.V
+		for w in range(self.V):
+			self.nw[w] = [0] * self.K
+			for k in range(self.K):
+				self.nw[w][k] = 0
+
+		self.nd = [0] * self.M
+		for m in range(self.M):
+			self.nd[m] = [0] * self.K
+			for k in range(self.K):
+				self.nd[m][k] = 0
+
+		self.nwsum = [0] * self.K
+		for k in range(self.K):
+			self.nwsum[k] = 0
+	
+		self.ndsum = [0] * self.M
+		for m in range(self.M):
+			self.ndsum[m] = 0
+
+		for m in range(self.ptrndata.M):
+			N = self.ptrndata.docs[m].length
+
+			for n in range(N):
+				w = self.ptrndata.docs[m].words[n]
+				topic = self.z[m][n]
+
+				self.nw[w][topic] += 1
+				self.nd[m][topic] += 1
+				self.nwsum[topic] += 1
+
+			self.ndsum[m] = N
+
+		# 读入新数据进行推测
+		self.pnewdata = dataset()
+		if self.withrawstrs:
+			if self.pnewdata.read_newdata_withrawstrs(self.directory + self.dfile, self.directory + self.wordmapfile):
+				print "Fail to read new data!\n"
+		else:
+			if self.pnewdata.read_newdata(self.directory + self.dfile,self.directory + self.wordmapfile):
+				print "Fail to read new data!\n"
+				return 1
+
+		self.newM = self.pnewdata.M
+		self.newV = self.pnewdata.V
+
+		self.newnw = [0] * self.newV
+		for w in range(self.newV):
+			self.newnw[w] = [0] * self.K
+			for k in range(self.K):
+				self.newnw[w][k] = 0
+		
+		self.newnd = [0] * self.newM
+		for m in range(self.newM):
+			self.newnd[m] = [0] * self.K
+			for k in range(self.K):
+				self.newnd[m][k] = 0
+
+		self.newnwsum = [0] * self.K
+		for k in range(self.K):
+			self.newnwsum[k] = 0
+		
+		self.newndsum = [0] * self.newM
+		for m in range(self.newM):
+			self.newndsum[m] = 0
+	
+		self.newz = [0] * self.newM
+		for m in range(self.pnewdata.M):
+			N = self.pnewdata.docs[m].length
+			self.newz[m] = [0] * N
+			for n in range(N):
+				w = self.pnewdata.docs[m].words[n]
+				_w = self.pnewdata._docs[m].words[n]
+				topic = int(random.random() * self.K)
+				self.newz[m][n] = topic
+
+				self.newnw[_w][topic] += 1
+				self.newnd[m][topic] += 1
+				self.newnwsum[topic] += 1
+
+			self.newndsum = N
+
+		self.newtheta = [0] * self.newM
+		for m in range(self.newM):
+			self.newtheta[m] = [0] * self.K
+	
+		self.newphi = [0] * self.K
+		for k in range(self.K):
+			self.newphi[k] = [0] * self.newV
+
+		return 0;        
+
+	def inference(self):
+		if self.twords > 0:
+			self.read_wordmap(self.directory + self.wordmapfile,self.id2word)
+
+		print "Sampling %d iterations for inference!\n" % niters
+
+		for self.inf_liter in range(1,self.niters + 1):
+			print "Iteration %d ...\n" % inf_liter
+
+			for m in range(self.newM):
+				for n in range(self.pnewdata.docs[m].length):
+					topic = self.inf_sampling(m,n)
+					self.newz[m][n] = topic
+
+		print "Gibbs sampling for inference completed!\n"
+		print "Saving the inference outputs!\n"
+		self.compute_newtheta()
+		self.compute_newphi()
+		self.inf_liter -= 1
+		self.save_inf_model(self.dfile)
+
+	def inf_sampling(self,m,n):
+		topic = self.newz[m][n]
+		w = self.pnewdata.docs[m].words[n]
+		_w = self.pnewdata._docs[m].words[n]
+		self.newnw[_w][topic] -= 1
+		self.newnd[m][topic] -= 1
+		self.newnwsum[topic] -= 1
+		self.newndsum[m] -= 1
+
+		Vbeta = self.V * self.beta
+		Kalpha * self.K * self.alpha
+
+		for k in range(self.K):
+			self.p[k] = (self.nw[w][k] + self.newnw[_w][k] + beta) / (self.nwsum[k] + self.newnwsum[k] + Vbeta) * (self.newnd[m][k] + self.alpha) / (self.newndsum[m] + Kalpha)
+
+		for k in range(1,self.K):
+			self.p[k] += self.p[k - 1]
+
+		u = random.random * self.p[k - 1]
+
+		for topic in range(self.K):
+			if self.p[topic] > u:
+				break
+	
+		self.newnw[_w][topic] += 1;
+		self.newnd[m][topic] += 1;
+		self.newnwsum[topic] += 1;
+		self.newndsum[m] += 1;  
+    	
+		return topic
+
+	def compute_newtheta(self):
+		for m in range(self.newM):
+			for k in range(self.K):
+				self.newtheta[m][k] = (self.newnd[m][k] + self.alpha) / (self.newndsum[m] + self.K * self.alpha)
+
+	def compute_newphi(self):
+		for k in range(self.K):
+			for w in range(self.newV):
+				if self.pnewdata._id2id.get(w):
+					self.newphi[k][w] = (self.nw[self.pnewdata._id2id[w]][k] + self.newnw[w][k] + self.beta) / (self.nwsum[k] + self.newnwsum[k] + self.V * self.beta)
+
