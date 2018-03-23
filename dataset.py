@@ -17,7 +17,7 @@ class dataset(object):
 		self.V = 0
 		self._id2id = dict()
 		self.docs = [0] * M
-		self._docs = []
+		self._docs = [0] * M
 
 	def add_doc(self,doc,idx):
 		if 0 <= idx and idx < self.M:
@@ -86,7 +86,7 @@ class dataset(object):
 		self.docs = [document()] * self.M
 		self.V = 0
 
-		for i in range(M):
+		for i in range(self.M):
 			line = fobj.readline()
 			strtok = strtokenizer(line)
 			length = strtok.count_tokens()
@@ -121,7 +121,7 @@ class dataset(object):
 		word2id = dict()
 		id2_id = dict()
 
-		dataset.read_wordmap(wordmapfile,word2id)
+		dataset.read_word2id(wordmapfile,word2id)
 
 		if len(word2id) <= 0:
 			print "No word map available!\n"
@@ -139,7 +139,7 @@ class dataset(object):
 		self._docs = [document()] * self.M
 		self.V = 0
 
-		for i in range(M):
+		for i in range(self.M):
 			line = fobj.readline()
 			strtok = strtokenizer(line)
 			length = strtok.count_tokens()
@@ -176,7 +176,7 @@ class dataset(object):
 		word2id = dict()
 		id2_id = dict()
 
-		dataset.read_wordmap(wordmapfile,word2id)
+		dataset.read_word2id(wordmapfile,word2id)
 
 		if len(word2id) <= 0:
 			print "No word map available!\n"
@@ -195,7 +195,7 @@ class dataset(object):
     
 		self.V = 0
 
-		for i in range(M):
+		for i in range(self.M):
 			line = fobj.readline()
 			strtok = strtokenizer(line)
 			length = strtok.count_tokens()

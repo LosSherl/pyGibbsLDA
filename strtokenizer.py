@@ -5,7 +5,7 @@ class strtokenizer(object):
 
 	def __init__(self,string,seperator = " "):
 		self.idx = 0
-		parse(string,seperator)
+		self.parse(string,seperator)
 		self.cnt = len(self.tokens)
 
 	def parse(self,string,seperator = " "):
@@ -24,7 +24,7 @@ class strtokenizer(object):
 		else:
 			return ""
 
-	def token(i):
+	def token(self,i):
 		if i >= 0 and i < self.cnt:
 			return self.tokens[i]
 		else:

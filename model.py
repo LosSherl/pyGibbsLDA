@@ -6,6 +6,7 @@ import utils
 from strtokenizer import strtokenizer
 from dataset import dataset
 from dataset import document
+from datetime import datetime
 
 MODEL_STATUS_UNKNOWN = 0
 MODEL_STATUS_EST = 1
@@ -42,7 +43,7 @@ class model(object):
 		self.beta = 0.1
 		self.niters = 2000
 		self.liter = 0
-		self.self.savestep = 200    
+		self.savestep = 200    
 		self.twords = 0
 		self.withrawstrs = 0
 
@@ -73,14 +74,14 @@ class model(object):
 		if self.parse_args(argc,argv):
 			return 1
 
-		if model_status == MODEL_STATUS_EST:
-			if init_est(): 
+		if self.model_status == MODEL_STATUS_EST:
+			if self.init_est(): 
 				return 1
-		elif model_status == MODEL_STATUS_ESTC:
-			if init_estc():
+		elif self.model_status == MODEL_STATUS_ESTC:
+			if self.init_estc():
 				return 1
-		elif model_status == MODEL_STATUS_INF:
-			if init_inf():
+		elif self.model_status == MODEL_STATUS_INF:
+			if self.init_inf():
 				return 1
 
 		return 0
@@ -94,7 +95,7 @@ class model(object):
 		self.ptrndata = dataset(self.M)
 		self.ptrndata.V = self.V
 
-		for i in range(M):
+		for i in range(self.M):
 			line = fin.readline()
 			strtok = strtokenizer(line)
 			length = strtok.count_tokens()
@@ -155,7 +156,7 @@ class model(object):
 		
 		for i in range(self.M):
 			for j in range(self.K):
-				fout.write("%f ",self.theta[i][j])
+				fout.write("%f " % self.theta[i][j])
 			fout.write("\n")
 		
 		return 0
@@ -165,7 +166,7 @@ class model(object):
 		
 		for i in range(self.K):
 			for j in range(self.V):
-				fout.write("%f ",self.phi[i][j])
+				fout.write("%f " % self.phi[i][j])
 			fout.write("\n")
 		
 		return 0
@@ -242,7 +243,7 @@ class model(object):
 		
 		for i in range(self.newM):
 			for j in range(self.K):
-				fout.write("%f ",self.newtheta[i][j])
+				fout.write("%f " % self.newtheta[i][j])
 			fout.write("\n")
 		
 		return 0
@@ -252,7 +253,7 @@ class model(object):
 		
 		for i in range(self.K):
 			for j in range(self.newV):
-				fout.write("%f ",self.newphi[i][j])
+				fout.write("%f " % self.newphi[i][j])
 			fout.write("\n")
 		
 		return 0
@@ -300,13 +301,13 @@ class model(object):
 		self.p = [0] * self.K
 
 		self.ptrndata = dataset()
-		if self.ptrndata.read_trndata(self.directory + self.dfile + self.wordmapfile):
-			print "Fail to read training data!\n"
+		if self.ptrndata.read_trndata(self.directory + self.dfile,self.wordmapfile):
+			print "Fail to read training data!"
 			return 1
 
 		self.M = self.ptrndata.M
 		self.V = self.ptrndata.V
-
+		
 		self.nw = [0] * self.V
 
 		for w in range(self.V):
@@ -326,7 +327,7 @@ class model(object):
 		for k in range(self.K):
 			self.nwsum[k] = 0
 	
-		self.ndsum = [0] * M
+		self.ndsum = [0] * self.M
 
 		for m in range(self.M):
 			self.ndsum[m] = 0
@@ -334,7 +335,7 @@ class model(object):
 		self.z = [0] * self.M
 
 		for m in range(self.ptrndata.M):
-			N = self.ptrndata.docs[m].length()
+			N = self.ptrndata.docs[m].length
 			self.z[m] = [0] * N
 
 			for n in range(N):
@@ -417,30 +418,29 @@ class model(object):
 
 	def estimate(self):
 		if self.twords > 0:
-			dataset.read_wordmap(self.directory + self.wordmapfile,self.id2word)
+			dataset.read_id2word(self.directory + self.wordmapfile,self.id2word)
 
-		print "Sampling %d iterations!\n" % niters
+		print "Sampling %d iterations!" % self.niters
 
 		last_iter = self.liter
 
 		for self.liter in range(last_iter + 1,self.niters + last_iter + 1):
-			print "Iteration %d ...\n" % self.liter
-
+			print "Iteration %d ..." % self.liter
 			for m in range(self.M):
 				for n in range(self.ptrndata.docs[m].length):
 					topic = self.sampling(m,n)
 					self.z[m][n] = topic
-
+				
 			if self.savestep > 0:
 				if self.liter % self.savestep == 0:
-					print "Saving the model at iteration %d ...\n" % liter
+					print "Saving the model at iteration %d ..." % self.liter
 					self.compute_theta()
-					self.compute_phiq
+					self.compute_phi()
 					self.save_model(utils.generate_model_name(self.liter))
 
 
- 		print "Gibbs sampling completed!\n"
- 		print "Saving the final model!\n"
+ 		print "Gibbs sampling completed!"
+ 		print "Saving the final model!"
 
 		self.compute_theta()
 		self.compute_phi()
@@ -457,14 +457,14 @@ class model(object):
 
 		Vbeta = self.V * self.beta
 		Kalpha = self.K * self.alpha
-
+		
 		for k in range(self.K):
 			self.p[k] = (self.nw[w][k] + self.beta) / (self.nwsum[k] + Vbeta) * (self.nd[m][k] + self.alpha) / (self.ndsum[m] + Kalpha)
 
 		for k in range(1,self.K):
 			self.p[k] += self.p[k - 1]
 
-		u = random.random() * p[self.K - 1]
+		u = random.random() * self.p[self.K - 1]
 
 		for topic in range(self.K):
 			if self.p[topic] > u:
@@ -474,7 +474,7 @@ class model(object):
 		self.nd[m][topic] += 1
 		self.nwsum[topic] += 1
 		self.ndsum[m] += 1
-	
+		
 		return topic
 
 	def compute_theta(self):
@@ -492,7 +492,7 @@ class model(object):
 		self.p = [0] * self.K
 
 		if self.load_model(self.model_name):
-			print "Fail to load word-topic assignmetn file of the model!\n"
+			print "Fail to load word-topic assignmetn file of the model!"
 			return 1
 	
 		self.nw = [0] * self.V
@@ -532,10 +532,10 @@ class model(object):
 		self.pnewdata = dataset()
 		if self.withrawstrs:
 			if self.pnewdata.read_newdata_withrawstrs(self.directory + self.dfile, self.directory + self.wordmapfile):
-				print "Fail to read new data!\n"
+				print "Fail to read new data!"
 		else:
 			if self.pnewdata.read_newdata(self.directory + self.dfile,self.directory + self.wordmapfile):
-				print "Fail to read new data!\n"
+				print "Fail to read new data!"
 				return 1
 
 		self.newM = self.pnewdata.M
@@ -589,20 +589,20 @@ class model(object):
 
 	def inference(self):
 		if self.twords > 0:
-			self.read_wordmap(self.directory + self.wordmapfile,self.id2word)
+			self.read_id2word(self.directory + self.wordmapfile,self.id2word)
 
-		print "Sampling %d iterations for inference!\n" % niters
+		print "Sampling %d iterations for inference!" % self.niters
 
 		for self.inf_liter in range(1,self.niters + 1):
-			print "Iteration %d ...\n" % inf_liter
+			print "Iteration %d ..." % self.inf_liter
 
 			for m in range(self.newM):
 				for n in range(self.pnewdata.docs[m].length):
 					topic = self.inf_sampling(m,n)
 					self.newz[m][n] = topic
 
-		print "Gibbs sampling for inference completed!\n"
-		print "Saving the inference outputs!\n"
+		print "Gibbs sampling for inference completed!"
+		print "Saving the inference outputs!"
 		self.compute_newtheta()
 		self.compute_newphi()
 		self.inf_liter -= 1
