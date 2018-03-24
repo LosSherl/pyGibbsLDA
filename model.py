@@ -39,7 +39,7 @@ class model(object):
 		self.M = 0
 		self.V = 0
 		self.K = 100
-		alpha = 50.0 / self.K
+		self.alpha = 50.0 / self.K
 		self.beta = 0.1
 		self.niters = 2000
 		self.liter = 0
@@ -68,7 +68,7 @@ class model(object):
 		self.newphi = None
 
 	def parse_args(self,argc,argv):
-		utils.parse_args(argc,argv,self)
+		self = utils.parse_args(argc,argv,self)
 
 	def init(self,argc,argv):
 		if self.parse_args(argc,argv):
@@ -196,7 +196,8 @@ class model(object):
 				word_prob = (w,self.phi[k][w])
 				words_probs.append(word_prob)
 
-			utils.quicksort(words_probs,0,len(words_probs) - 1)
+			words_probs = sorted(words_probs,key = lambda x:(float(x[1])),reverse = True)
+			# utils.quicksort(w0ords_probs,0,len(words_probs) - 1)
 
 			fout.write("Topic %dth:\n" % k)
 
@@ -283,13 +284,14 @@ class model(object):
 				word_prob = (w,self.newphi[k][w])
 				words_probs.append(word_prob)
 
-			utils.quicksort(words_probs,0,len(words_probs) - 1)
+			# utils.quicksort(words_probs,0,len(words_probs) - 1)
+			words_probs = sorted(words_probs,key = lambda x:(float(x[1])),reverse = True)
 
 			fout.write("Topic %dth:\n" % k)
 			
 			for i in range(self.twords):
-				if pnewdata._id2id.get(words_probs[i][0]):
-					_it = pnewdata._id2id[words_probs[i][0]]
+				if self.pnewdata._id2id.get(words_probs[i][0]):
+					_it = self.pnewdata._id2id[words_probs[i][0]]
 					if self.id2word.get(_it):
 						fout.write("\t%s   %f\n" % (self.id2word[_it],words_probs[i][1]))
         
@@ -418,7 +420,8 @@ class model(object):
 
 	def estimate(self):
 		if self.twords > 0:
-			dataset.read_id2word(self.directory + self.wordmapfile,self.id2word)
+			self.id2word = dataset.read_id2word(self.directory + self.wordmapfile)
+
 
 		print "Sampling %d iterations!" % self.niters
 
@@ -533,7 +536,7 @@ class model(object):
 		if self.withrawstrs:
 			if self.pnewdata.read_newdata_withrawstrs(self.directory + self.dfile, self.directory + self.wordmapfile):
 				print "Fail to read new data!"
-		else:
+		else: 
 			if self.pnewdata.read_newdata(self.directory + self.dfile,self.directory + self.wordmapfile):
 				print "Fail to read new data!"
 				return 1
@@ -575,7 +578,7 @@ class model(object):
 				self.newnd[m][topic] += 1
 				self.newnwsum[topic] += 1
 
-			self.newndsum = N
+			self.newndsum[m] = N
 
 		self.newtheta = [0] * self.newM
 		for m in range(self.newM):
@@ -589,7 +592,7 @@ class model(object):
 
 	def inference(self):
 		if self.twords > 0:
-			self.read_id2word(self.directory + self.wordmapfile,self.id2word)
+			self.id2word = dataset.read_id2word(self.directory + self.wordmapfile)
 
 		print "Sampling %d iterations for inference!" % self.niters
 
@@ -618,15 +621,15 @@ class model(object):
 		self.newndsum[m] -= 1
 
 		Vbeta = self.V * self.beta
-		Kalpha * self.K * self.alpha
+		Kalpha = self.K * self.alpha
 
 		for k in range(self.K):
-			self.p[k] = (self.nw[w][k] + self.newnw[_w][k] + beta) / (self.nwsum[k] + self.newnwsum[k] + Vbeta) * (self.newnd[m][k] + self.alpha) / (self.newndsum[m] + Kalpha)
+			self.p[k] = (self.nw[w][k] + self.newnw[_w][k] + self.beta) / (self.nwsum[k] + self.newnwsum[k] + Vbeta) * (self.newnd[m][k] + self.alpha) / (self.newndsum[m] + Kalpha)
 
 		for k in range(1,self.K):
 			self.p[k] += self.p[k - 1]
 
-		u = random.random * self.p[k - 1]
+		u = random.random() * self.p[k - 1]
 
 		for topic in range(self.K):
 			if self.p[topic] > u:

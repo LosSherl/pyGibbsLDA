@@ -22,6 +22,7 @@ class dataset(object):
 	def add_doc(self,doc,idx):
 		if 0 <= idx and idx < self.M:
 			self.docs[idx] = doc
+			
 
 	def _add_doc(self,doc,idx):
 		if 0 <= idx and idx < self.M:
@@ -40,7 +41,7 @@ class dataset(object):
 		return 0
 
 	@staticmethod
-	def read_word2id(wordmapfile,pword2id):
+	def read_word2id(wordmapfile):
 		pword2id = dict()
 
 		fobj = open(wordmapfile,"r")
@@ -54,15 +55,18 @@ class dataset(object):
 			if strtok.count_tokens() != 2:
 				continue
 
-			pword2id[strtok.token(0)] = strtok.token(1)
+			pword2id[strtok.token(0)] = int(strtok.token(1))
+
+		return pword2id
 
 	@staticmethod
-	def read_id2word(wordmapfile,pid2word):
+	def read_id2word(wordmapfile):
 		pid2word = dict()
 
 		fobj = open(wordmapfile,"r")
 
 		nwords = int(fobj.readline())
+		
 
 		for i in range(nwords):
 			buff = fobj.readline()
@@ -71,7 +75,9 @@ class dataset(object):
 			if strtok.count_tokens() != 2:
 				continue
 
-			pid2word[strtok.token(1)] = strtok.token(0)
+			pid2word[int(strtok.token(1))] = strtok.token(0)
+
+		return pid2word
 
 	def read_trndata(self,dfile,wordmapfile):
 		word2id = dict()
@@ -100,7 +106,7 @@ class dataset(object):
 			pdoc = document(length)
 
 			for j in range(length):
-				if word2id.get(strtok.token(j)):
+				if word2id.get(strtok.token(j),-1) >= 0:
 					pdoc.words[j] = word2id[strtok.token(j)]
 				else:
 					pdoc.words[j] = len(word2id)
@@ -121,7 +127,7 @@ class dataset(object):
 		word2id = dict()
 		id2_id = dict()
 
-		dataset.read_word2id(wordmapfile,word2id)
+		word2id = dataset.read_word2id(wordmapfile)
 
 		if len(word2id) <= 0:
 			print "No word map available!\n"
@@ -148,24 +154,25 @@ class dataset(object):
 			_doc = []
 
 			for j in range(length):
-				if word2id.get(strtok.token(j)):
+				if word2id.get(strtok.token(j),-1) >= 0:
 					if id2_id.get(word2id[strtok.token(j)]):
 						_id = id2_id[word2id[strtok.token(j)]]
 					else:
 						_id = len(id2_id)
 						id2_id[word2id[strtok.token(j)]] = _id
 						self._id2id[_id] = word2id[strtok.token(j)]
+					doc.append(word2id[strtok.token(j)])
+					_doc.append(_id)
 				else:
 					# word not found, i.e., word unseen in training data
 					pass
 
-				doc.append(word2id[strtok.token(j)])
-				_doc.append(_id)
+				
 			
 			pdoc = document(len(doc),doc)
 			_pdoc = document(len(_doc),_doc)
- 			self.add_doc(pdoc)
- 			self._add_doc(_pdoc)
+ 			self.add_doc(pdoc,i)
+ 			self._add_doc(_pdoc,i)
 
  		fobj.close()
 		self.V = len(id2_id)
@@ -176,7 +183,7 @@ class dataset(object):
 		word2id = dict()
 		id2_id = dict()
 
-		dataset.read_word2id(wordmapfile,word2id)
+		word2id = dataset.read_word2id(wordmapfile)
 
 		if len(word2id) <= 0:
 			print "No word map available!\n"

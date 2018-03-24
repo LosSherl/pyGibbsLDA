@@ -129,7 +129,8 @@ def parse_args(argc,argv,pmodel):
 		if twords > 0:
 		    pmodel.twords = twords
 		
-		if read_and_parse(pmodel.directory + pmodel.model_name + pmodel.others_suffix, pmodel):
+		pmodel = read_and_parse(pmodel.directory + pmodel.model_name + pmodel.others_suffix, pmodel)
+		if not pmodel:
 		    return 1
     
 	if model_status == MODEL_STATUS_INF:
@@ -167,20 +168,21 @@ def parse_args(argc,argv,pmodel):
 		if withrawdata > 0:
 		    pmodel.withrawstrs = withrawdata
 			
-		if read_and_parse(pmodel.directory + pmodel.model_name + pmodel.others_suffix, pmodel):
+		pmodel = read_and_parse(pmodel.directory + pmodel.model_name + pmodel.others_suffix, pmodel)
+		if not pmodel:
 		    return 1
     
 	if model_status == MODEL_STATUS_UNKNOWN:
 		print "Please specify the task you would like to perform (-est/-estc/-inf)!\n"
 		return 1
     
-	return 0
+	return pmodel
 
 def read_and_parse(file_name,pmodel):
 	fr = open(file_name,"r")
 
 	for line in fr:
-		strtok = strtokenizer(line)
+		strtok = strtokenizer(line,"=")
 		count = strtok.count_tokens()
 
 		if count != 2:
@@ -190,9 +192,9 @@ def read_and_parse(file_name,pmodel):
 		optval = strtok.token(1)
 
 		if optstr == "alpha":
-			pmodel.alpha = int(optval)
+			pmodel.alpha = float(optval)
 		elif optstr == "beta":
-			pmodel.beta = int(optval)
+			pmodel.beta = float(optval)
 		elif optstr == "ntopics":
 			pmodel.K = int(optval)
 		elif optstr == "ndocs":
@@ -203,7 +205,8 @@ def read_and_parse(file_name,pmodel):
 			pmodel.liter = int(optval)
 		else:
 			pass
-	return 0	
+
+	return pmodel	
 
 def generate_model_name(iter):
 	model_name = "model-"
@@ -238,32 +241,32 @@ def sort(probs,words):
 				words[j] = tword
 	return probs,words
 
-def quicksort(vect,left,right):
-	l_hold = left
-	r_hold = right
+# def quicksort(vect,left,right):
+# 	l_hold = left
+# 	r_hold = right
 
-	pivotidx = left
-	pivot = vect[pivotidx]
+# 	pivotidx = left
+# 	pivot = vect[pivotidx]
 
-	while left < right:
-		while vect[right][1] <= pivot[1] and left < right:
-			right = right - 1
-		if left != right:
-			vect[left] = vect[right]
-			left = left + 1
-		while vect[left][1] >= pivot[1] and left < right:
-			left = left + 1
-		if left != right:
-			vect[right] = vect[left]
-			right = right - 1
+# 	while left < right:
+# 		while vect[right][1] <= pivot[1] and left < right:
+# 			right = right - 1
+# 		if left != right:
+# 			vect[left] = vect[right]
+# 			left = left + 1
+# 		while vect[left][1] >= pivot[1] and left < right:
+# 			left = left + 1
+# 		if left != right:
+# 			vect[right] = vect[left]
+# 			right = right - 1
 
-		vect[left] = pivot
-		pivotidx = left
-		left = l_hold
-		right = r_hold
+# 		vect[left] = pivot
+# 		pivotidx = left
+# 		left = l_hold
+# 		right = r_hold
 	    
-		if left < pivotidx:
-			quicksort(vect,left,pivotidx - 1)
+# 		if left < pivotidx:
+# 			quicksort(vect,left,pivotidx - 1)
 
-		if right > pivotidx:
-			quicksort(vect,pivotidx + 1,right)
+# 		if right > pivotidx:
+# 			quicksort(vect,pivotidx + 1,right)
