@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+import numpy as np
 import utils
 from strtokenizer import strtokenizer
 from dataset import dataset
@@ -118,7 +119,7 @@ class model(object):
 				self.z[i][j] = topics[j]
 
 		fin.close()
-
+		
 		return 0
 
 	def save_model(self,model_name):
@@ -137,6 +138,8 @@ class model(object):
 		if self.twords > 0:
 			if self.save_model_twords(self.directory + model_name + self.twords_suffix):
 				return 1
+
+		self.save_model_perplexity(model_name + ".perplexity")
 
 		return 0
 
@@ -170,6 +173,14 @@ class model(object):
 			fout.write("\n")
 		
 		return 0
+
+	def save_model_perplexity(self,filename):
+		perplexity = self.calc_perplexity()
+		fout = open(filename,"w")
+
+		fout.write("perplexity=%f\n" % perplexity)
+
+		fout.close()
 
 	def save_model_others(self,filename):
 		fout = open(filename,"w")
@@ -354,14 +365,15 @@ class model(object):
 			# document i的单词总数
 			self.ndsum[m] = N
 	
-		self.theta = [0] * self.M
-		for m in range(self.M):
-			self.theta[m] = [0] * self.K 
+		# self.theta = [0] * self.M
+		# for m in range(self.M):
+		# 	self.theta[m] = [0] * self.K 
 		
-		self.phi = [0] * self.K
-		for k in range(self.K):
-			self.phi[k] = [0] * self.V
-	
+		# self.phi = [0] * self.K
+		# for k in range(self.K):
+		# 	self.phi[k] = [0] * self.V
+		self.theta = np.zeros((self.M,self.K))
+		self.phi = np.zeros((self.K,self.V))
 	
 		return 0
 
@@ -408,14 +420,17 @@ class model(object):
     		# document i的单词总数
     		self.ndsum[m] = N
 
-		self.theta = [0] * self.M
-		for m in range(self.M):
-			self.theta[m] = [0] * self.K
+		# self.theta = [0] * self.M
+		# for m in range(self.M):
+		# 	self.theta[m] = [0] * self.K
 
-		self.phi = [0] * self.K
-		for k in range(self.K):
-			self.phi[k] = [0] * self.V
-	
+		# self.phi = [0] * self.K
+		# for k in range(self.K):
+		# 	self.phi[k] = [0] * self.V
+		self.theta = np.zeros((self.M,self.K))
+		self.phi = np.zeros((self.K,self.V))
+
+
 		return 0
 
 	def estimate(self):
@@ -580,13 +595,15 @@ class model(object):
 
 			self.newndsum[m] = N
 
-		self.newtheta = [0] * self.newM
-		for m in range(self.newM):
-			self.newtheta[m] = [0] * self.K
+		# self.newtheta = [0] * self.newM
+		# for m in range(self.newM):
+		# 	self.newtheta[m] = [0] * self.K
 	
-		self.newphi = [0] * self.K
-		for k in range(self.K):
-			self.newphi[k] = [0] * self.newV
+		# self.newphi = [0] * self.K
+		# for k in range(self.K):
+		# 	self.newphi[k] = [0] * self.newV
+		self.newtheta = np.zeros((self.M,self.K))
+		self.newphi = np.zeros((self.K,self.V))
 
 		return 0;        
 
@@ -652,4 +669,12 @@ class model(object):
 			for w in range(self.newV):
 				if self.pnewdata._id2id.get(w):
 					self.newphi[k][w] = (self.nw[self.pnewdata._id2id[w]][k] + self.newnw[w][k] + self.beta) / (self.nwsum[k] + self.newnwsum[k] + self.V * self.beta)
+
+	def calc_perplexity(self):
+
+		preplexity = 0.0
+		for m in range(self.M):
+		    for w in self.z[m]:
+		        preplexity += np.log(np.sum(self.theta[m] * self.phi[:, w]))
+		return np.exp(-(preplexity / np.sum(self.ndsum)))
 
