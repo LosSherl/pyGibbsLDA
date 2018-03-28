@@ -163,6 +163,8 @@ class dataset(object):
 						self._id2id[_id] = word2id[strtok.token(j)]
 					doc.append(word2id[strtok.token(j)])
 					_doc.append(_id)
+					# if _id == 3234:
+					# 	print strtok.token(j)," ",word2id[strtok.token(j)]
 				else:
 					# word not found, i.e., word unseen in training data
 					pass
@@ -218,11 +220,12 @@ class dataset(object):
 						_id = len(id2_id)
 						id2_id[word2id[strtok.token(j)]] = _id
 						self._id2id[_id] = word2id[strtok.token(j)]
+					doc.append(word2id[strtok.token(j)])
+					_doc.append(_id)
 				else:
 					# word not found, i.e., word unseen in training data
 					pass
-				doc.append(word2id[strtok.token(j)])
-				_doc.append(_id)
+				
 
 			pdoc = document(len(doc),doc,line)
 			_pdoc = document(len(_doc),_doc,line)

@@ -113,7 +113,6 @@ class model(object):
 		
 			pdoc = document(len(words),words)
 			self.ptrndata.add_doc(pdoc,i)
-
 			self.z[i] = [0] * len(topics)
 			for j in range(len(topics)):
 				self.z[i][j] = topics[j]
@@ -139,7 +138,6 @@ class model(object):
 			if self.save_model_twords(self.directory + model_name + self.twords_suffix):
 				return 1
 
-		self.save_model_perplexity(model_name + ".perplexity")
 
 		return 0
 
@@ -174,13 +172,6 @@ class model(object):
 		
 		return 0
 
-	def save_model_perplexity(self,filename):
-		perplexity = self.calc_perplexity()
-		fout = open(filename,"w")
-
-		fout.write("perplexity=%f\n" % perplexity)
-
-		fout.close()
 
 	def save_model_others(self,filename):
 		fout = open(filename,"w")
@@ -322,28 +313,16 @@ class model(object):
 		self.V = self.ptrndata.V
 		
 		self.nw = [0] * self.V
-
 		for w in range(self.V):
 			self.nw[w] = [0] * self.K
-			for k in range(self.K):
-				self.nw[w][k] = 0
 
 		self.nd = [0] * self.M
-
 		for m in range(self.M):
 			self.nd[m] = [0] * self.K
-			for k in range(self.K):
-				self.nd[m][k] = 0
 	
 		self.nwsum = [0] * self.K
-
-		for k in range(self.K):
-			self.nwsum[k] = 0
 	
 		self.ndsum = [0] * self.M
-
-		for m in range(self.M):
-			self.ndsum[m] = 0
 
 		self.z = [0] * self.M
 
@@ -387,22 +366,14 @@ class model(object):
   		self.nw = [0] * self.V
   		for w in range(self.V):
   			self.nw[w] = [0] * self.K
-  			for k in range(self.K):
-  				self.nw[w][k] = 0
 
   		self.nd = [0] * self.M
   		for m in range(self.M):
   			self.nd = [0] * self.K
-			for k in range(self.K):
-				self.nd[m][k] = 0
 
 		self.nwsum = [0] * self.K
-		for k in range(self.K):
-			self.nwsum[k] = 0
 		
 		self.ndsum = [0] * self.M
-		for m in range(self.M):
-			self.ndsum[m] = 0
     	
 		for m in range(self.ptrndata.M):
 			N = self.ptrndata.docs[m].length
@@ -465,6 +436,8 @@ class model(object):
 		self.liter -= 1
 		self.save_model(utils.generate_model_name(-1))
 
+		print "Perplexity = %f" % self.calc_est_perplexity()
+
 	def sampling(self,m,n):
 		topic = self.z[m][n]
 		w = self.ptrndata.docs[m].words[n]
@@ -516,22 +489,14 @@ class model(object):
 		self.nw = [0] * self.V
 		for w in range(self.V):
 			self.nw[w] = [0] * self.K
-			for k in range(self.K):
-				self.nw[w][k] = 0
 
 		self.nd = [0] * self.M
-		for m in range(self.M):
-			self.nd[m] = [0] * self.K
-			for k in range(self.K):
-				self.nd[m][k] = 0
+		for w in range(self.M):
+			self.nd[w] = [0] * self.K
 
 		self.nwsum = [0] * self.K
-		for k in range(self.K):
-			self.nwsum[k] = 0
 	
 		self.ndsum = [0] * self.M
-		for m in range(self.M):
-			self.ndsum[m] = 0
 
 		for m in range(self.ptrndata.M):
 			N = self.ptrndata.docs[m].length
@@ -545,6 +510,13 @@ class model(object):
 				self.nwsum[topic] += 1
 
 			self.ndsum[m] = N
+
+		self.theta = np.zeros((self.M,self.K))
+		self.phi = np.zeros((self.K,self.V))
+		self.compute_theta()
+		self.compute_phi()
+		
+		print "model Perplexity = %f" % self.calc_est_perplexity()
 
 		# 读入新数据进行推测
 		self.pnewdata = dataset()
@@ -562,22 +534,14 @@ class model(object):
 		self.newnw = [0] * self.newV
 		for w in range(self.newV):
 			self.newnw[w] = [0] * self.K
-			for k in range(self.K):
-				self.newnw[w][k] = 0
 		
 		self.newnd = [0] * self.newM
 		for m in range(self.newM):
 			self.newnd[m] = [0] * self.K
-			for k in range(self.K):
-				self.newnd[m][k] = 0
 
 		self.newnwsum = [0] * self.K
-		for k in range(self.K):
-			self.newnwsum[k] = 0
 		
 		self.newndsum = [0] * self.newM
-		for m in range(self.newM):
-			self.newndsum[m] = 0
 	
 		self.newz = [0] * self.newM
 		for m in range(self.pnewdata.M):
@@ -602,10 +566,10 @@ class model(object):
 		# self.newphi = [0] * self.K
 		# for k in range(self.K):
 		# 	self.newphi[k] = [0] * self.newV
-		self.newtheta = np.zeros((self.M,self.K))
-		self.newphi = np.zeros((self.K,self.V))
+		self.newtheta = np.zeros((self.newM,self.K))
+		self.newphi = np.zeros((self.K,self.newV))
 
-		return 0;        
+		return 0   
 
 	def inference(self):
 		if self.twords > 0:
@@ -627,6 +591,7 @@ class model(object):
 		self.compute_newphi()
 		self.inf_liter -= 1
 		self.save_inf_model(self.dfile)
+		print "Perplexity = %f" % self.calc_inf_perplexity()
 
 	def inf_sampling(self,m,n):
 		topic = self.newz[m][n]
@@ -646,7 +611,7 @@ class model(object):
 		for k in range(1,self.K):
 			self.p[k] += self.p[k - 1]
 
-		u = random.random() * self.p[k - 1]
+		u = random.random() * self.p[self.K - 1]
 
 		for topic in range(self.K):
 			if self.p[topic] > u:
@@ -667,14 +632,19 @@ class model(object):
 	def compute_newphi(self):
 		for k in range(self.K):
 			for w in range(self.newV):
-				if self.pnewdata._id2id.get(w):
+				if self.pnewdata._id2id.get(w,-1) >= 0:
 					self.newphi[k][w] = (self.nw[self.pnewdata._id2id[w]][k] + self.newnw[w][k] + self.beta) / (self.nwsum[k] + self.newnwsum[k] + self.V * self.beta)
 
-	def calc_perplexity(self):
+	def calc_inf_perplexity(self):
+		perplexity = 0.0
+		for m in range(self.newM):
+		    for w in self.pnewdata._docs[m].words:
+		        perplexity += np.log(np.sum(self.newtheta[m] * self.newphi[:,w]))
+		return np.exp(-(perplexity / np.sum(self.newndsum)))
 
-		preplexity = 0.0
+	def calc_est_perplexity(self):
+		perplexity = 0.0
 		for m in range(self.M):
-		    for w in self.z[m]:
-		        preplexity += np.log(np.sum(self.theta[m] * self.phi[:, w]))
-		return np.exp(-(preplexity / np.sum(self.ndsum)))
-
+		    for w in self.ptrndata.docs[m].words:
+		        perplexity += np.log(np.sum(self.theta[m] * self.phi[:,w]))
+		return np.exp(-(perplexity / np.sum(self.ndsum)))
