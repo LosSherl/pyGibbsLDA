@@ -5,8 +5,7 @@ from strtokenizer import strtokenizer
 
 MODEL_STATUS_UNKNOWN = 0
 MODEL_STATUS_EST = 1
-MODEL_STATUS_ESTC = 2
-MODEL_STATUS_INF = 3
+MODEL_STATUS_INF = 2
 
 def parse_args(argc,argv,pmodel):
 	model_status = MODEL_STATUS_UNKNOWN
@@ -27,8 +26,6 @@ def parse_args(argc,argv,pmodel):
 	
 		if arg == "-est":
 		    model_status = MODEL_STATUS_EST
-		elif arg == "-estc":
-		    model_status = MODEL_STATUS_ESTC
 		elif arg == "-inf":
 		    model_status = MODEL_STATUS_INF
 		elif arg == "-dir":
@@ -59,7 +56,7 @@ def parse_args(argc,argv,pmodel):
 		    twords = int(argv[i + 1])
 		    i = i + 1
 		elif arg == "-withrawdata":
-		    withrawdata = 1
+		    withrawdata = True
 		else:
 			pass
 		i = i + 1
@@ -67,7 +64,7 @@ def parse_args(argc,argv,pmodel):
 	if model_status == MODEL_STATUS_EST:
 		if dfile == "":
 		    print "Please specify the input data file for model estimation!\n"
-		    return 1
+		    return False
 		
 		pmodel.model_status = model_status
 		
@@ -92,7 +89,6 @@ def parse_args(argc,argv,pmodel):
 		    pmodel.twords = twords
 		
 		pmodel.dfile = dfile
-		
 		idx = dfile.rfind("/")
 		if idx == -1:
 		    pmodel.directory = "./"
@@ -102,53 +98,21 @@ def parse_args(argc,argv,pmodel):
 		    print "dir = %s\n" % pmodel.directory
 		    print "dfile = %s\n" % pmodel.dfile
     
-	if model_status == MODEL_STATUS_ESTC:
-		if directory == "":
-		    print "Please specify model directory!\n"
-		    return 1
-		
-		if model_name == "":
-		    print "Please specify model name upon that you want to continue estimating!\n"
-		    return 1
-
-		pmodel.model_status = model_status
-
-		if directory[len(directory) - 1] != '/':
-		    directory += "/"
-
-		pmodel.directory = directory
-
-		pmodel.model_name = model_name
-
-		if niters > 0:
-		    pmodel.niters = niters
-		
-		if savestep > 0:
-		    pmodel.savestep = savestep
-		
-		if twords > 0:
-		    pmodel.twords = twords
-		
-		pmodel = read_and_parse(pmodel.directory + pmodel.model_name + pmodel.others_suffix, pmodel)
-		if not pmodel:
-		    return 1
-    
 	if model_status == MODEL_STATUS_INF:
 		if directory == "":
 		    print "Please specify model directory please!\n"
-		    return 1
+		    return False
 		
 		if model_name == "":
 		    print "Please specify model name for inference!\n"
-		    return 1
+		    return False
 
 		if dfile == "":
 		    print "Please specify the new data file for inference!\n"
-		    return 1
+		    return False
 		
 		pmodel.model_status = model_status
-
-		if directory[len(directory) - 1] != '/':
+		if directory[-1] != '/':
 		    directory += "/"
 
 		pmodel.directory = directory
@@ -170,12 +134,11 @@ def parse_args(argc,argv,pmodel):
 			
 		pmodel = read_and_parse(pmodel.directory + pmodel.model_name + pmodel.others_suffix, pmodel)
 		if not pmodel:
-		    return 1
-    
+		    return False
+		
 	if model_status == MODEL_STATUS_UNKNOWN:
-		print "Please specify the task you would like to perform (-est/-estc/-inf)!\n"
-		return 1
-    
+		print "Please specify the task you would like to perform (-est/-inf)!\n"
+		return False
 	return pmodel
 
 def read_and_parse(file_name,pmodel):
@@ -228,45 +191,3 @@ def generate_model_name(iter):
 		model_name = model_name + "final"
 
 	return model_name
-
-def sort(probs,words):
-	for i in range(len(probs)):
-		for j in range(i + 1,len(probs)):
-			if probs[i] < probs[j]:
-				tprob = probs[i]
-				tword = words[i]
-				probs[i] = probs[j]
-				words[i] = words[j]
-				probs[j] = tprob
-				words[j] = tword
-	return probs,words
-
-# def quicksort(vect,left,right):
-# 	l_hold = left
-# 	r_hold = right
-
-# 	pivotidx = left
-# 	pivot = vect[pivotidx]
-
-# 	while left < right:
-# 		while vect[right][1] <= pivot[1] and left < right:
-# 			right = right - 1
-# 		if left != right:
-# 			vect[left] = vect[right]
-# 			left = left + 1
-# 		while vect[left][1] >= pivot[1] and left < right:
-# 			left = left + 1
-# 		if left != right:
-# 			vect[right] = vect[left]
-# 			right = right - 1
-
-# 		vect[left] = pivot
-# 		pivotidx = left
-# 		left = l_hold
-# 		right = r_hold
-	    
-# 		if left < pivotidx:
-# 			quicksort(vect,left,pivotidx - 1)
-
-# 		if right > pivotidx:
-# 			quicksort(vect,pivotidx + 1,right)

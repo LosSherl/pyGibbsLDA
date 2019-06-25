@@ -4,6 +4,7 @@
 import random
 import numpy as np
 import utils
+import time
 from strtokenizer import strtokenizer
 from dataset import dataset
 from dataset import document
@@ -11,10 +12,9 @@ from datetime import datetime
 
 MODEL_STATUS_UNKNOWN = 0
 MODEL_STATUS_EST = 1
-MODEL_STATUS_ESTC = 2
-MODEL_STATUS_INF = 3
+MODEL_STATUS_INF = 2
 
-class model(object):
+class LDA(object):
 	def __init__(self):
 		self.set_default_values()
 
@@ -70,26 +70,23 @@ class model(object):
 
 	def parse_args(self,argc,argv):
 		self = utils.parse_args(argc,argv,self)
+		return True
 
 	def init(self,argc,argv):
-		if self.parse_args(argc,argv):
-			return 1
-
+		if not self.parse_args(argc,argv):
+			return False
 		if self.model_status == MODEL_STATUS_EST:
-			if self.init_est(): 
-				return 1
-		elif self.model_status == MODEL_STATUS_ESTC:
-			if self.init_estc():
-				return 1
+			if not self.init_est(): 
+				return False
 		elif self.model_status == MODEL_STATUS_INF:
-			if self.init_inf():
-				return 1
+			if not self.init_inf():
+				return False
 
-		return 0
+		return True
 
 	def load_model(self,model_name):
 
-		filename = self.directory + model_name + self.tassign_suffix;
+		filename = self.directory + model_name + self.tassign_suffix
 		fin = open(filename,"r")
 
 		self.z = [0] * self.M
@@ -107,39 +104,38 @@ class model(object):
 				tok = strtokenizer(token,":")
 				if tok.count_tokens() != 2:
 					print "Invalid word-topic assignment line!\n"
-					return 1
+					return False
 				words.append(int(tok.token(0)))
 				topics.append(int(tok.token(1)))
 		
 			pdoc = document(len(words),words)
 			self.ptrndata.add_doc(pdoc,i)
-			self.z[i] = [0] * len(topics)
+			self.z[i] = np.zeros(len(topics))
 			for j in range(len(topics)):
 				self.z[i][j] = topics[j]
 
 		fin.close()
 		
-		return 0
+		return True
 
 	def save_model(self,model_name):
-		if self.save_model_tassign(self.directory + model_name + self.tassign_suffix):
-			return 1
+		if not self.save_model_tassign(self.directory + model_name + self.tassign_suffix):
+			return False
 
-		if self.save_model_others(self.directory + model_name + self.others_suffix):
-			return 1
+		if not self.save_model_others(self.directory + model_name + self.others_suffix):
+			return False
 
-		if self.save_model_theta(self.directory + model_name + self.theta_suffix):
-			return 1
+		if not self.save_model_theta(self.directory + model_name + self.theta_suffix):
+			return False
 
-		if self.save_model_phi(self.directory + model_name + self.phi_suffix):
-			return 1
+		if not self.save_model_phi(self.directory + model_name + self.phi_suffix):
+			return False
 
 		if self.twords > 0:
-			if self.save_model_twords(self.directory + model_name + self.twords_suffix):
-				return 1
+			if not self.save_model_twords(self.directory + model_name + self.twords_suffix):
+				return False
 
-
-		return 0
+		return True
 
 	def save_model_tassign(self,filename):
 		fout = open(filename,"w")
@@ -150,7 +146,7 @@ class model(object):
 			fout.write("\n")
 
 		fout.close()
-		return 0
+		return True
 
 	def save_model_theta(self,filename):
 		fout = open(filename,"w")
@@ -160,7 +156,7 @@ class model(object):
 				fout.write("%f " % self.theta[i][j])
 			fout.write("\n")
 		
-		return 0
+		return True
 
 	def save_model_phi(self,filename):
 		fout = open(filename,"w")
@@ -170,7 +166,7 @@ class model(object):
 				fout.write("%f " % self.phi[i][j])
 			fout.write("\n")
 		
-		return 0
+		return True
 
 
 	def save_model_others(self,filename):
@@ -185,7 +181,7 @@ class model(object):
 
 		fout.close()
 
-		return 0
+		return True
 
 	def save_model_twords(self,filename):
 		fout = open(filename,"w")
@@ -199,7 +195,7 @@ class model(object):
 				words_probs.append(word_prob)
 
 			words_probs = sorted(words_probs,key = lambda x:(float(x[1])),reverse = True)
-			# utils.quicksort(w0ords_probs,0,len(words_probs) - 1)
+			
 
 			fout.write("Topic %dth:\n" % k)
 
@@ -209,26 +205,26 @@ class model(object):
 	
 		fout.close()
 
-		return 0
+		return True
 
 	def save_inf_model(self,model_name):
-		if self.save_inf_model_tassign(self.directory + model_name + self.tassign_suffix):
-			return 1
+		if not self.save_inf_model_tassign(self.directory + model_name + self.tassign_suffix):
+			return False
 
-		if self.save_inf_model_others(self.directory + model_name + self.others_suffix):
-			return 1
+		if not self.save_inf_model_others(self.directory + model_name + self.others_suffix):
+			return False
 
-		if self.save_inf_model_newtheta(self.directory + model_name + self.theta_suffix):
-			return 1
+		if not self.save_inf_model_newtheta(self.directory + model_name + self.theta_suffix):
+			return False
 
-		if self.save_inf_model_newphi(self.directory + model_name + self.phi_suffix):
-			return 1
+		if not self.save_inf_model_newphi(self.directory + model_name + self.phi_suffix):
+			return False
 
-		if self.twords > 0:
+		if not self.twords > 0:
 			if self.save_inf_model_twords(self.directory + model_name + self.twords_suffix):
-				return 1
+				return False
 
-		return 0
+		return True
 
 	def save_inf_model_tassign(self,filename):
 		fout = open(filename,"w")
@@ -239,7 +235,7 @@ class model(object):
 			fout.write("\n")
 
 		fout.close()
-		return 0
+		return True
 
 	def save_inf_model_newtheta(self,filename):
 		fout = open(filename,"w")
@@ -249,7 +245,7 @@ class model(object):
 				fout.write("%f " % self.newtheta[i][j])
 			fout.write("\n")
 		
-		return 0
+		return True
 
 	def save_inf_model_newphi(self,filename):
 		fout = open(filename,"w")
@@ -259,7 +255,7 @@ class model(object):
 				fout.write("%f " % self.newphi[i][j])
 			fout.write("\n")
 		
-		return 0
+		return True
 
 	def save_inf_model_others(self,filename):
 		fout = open(filename,"w")
@@ -273,7 +269,7 @@ class model(object):
 
 		fout.close()
 
-		return 0
+		return True
 
 	def save_inf_model_twords(self,filename):
 		fout = open(filename,"w")
@@ -286,7 +282,6 @@ class model(object):
 				word_prob = (w,self.newphi[k][w])
 				words_probs.append(word_prob)
 
-			# utils.quicksort(words_probs,0,len(words_probs) - 1)
 			words_probs = sorted(words_probs,key = lambda x:(float(x[1])),reverse = True)
 
 			fout.write("Topic %dth:\n" % k)
@@ -299,36 +294,29 @@ class model(object):
         
 		fout.close()
  
-		return 0
+		return True
 
 	def init_est(self):
-		self.p = [0] * self.K
-
+		self.p = np.zeros(self.K)
 		self.ptrndata = dataset()
-		if self.ptrndata.read_trndata(self.directory + self.dfile,self.wordmapfile):
+		if not self.ptrndata.read_trndata(self.directory + self.dfile,self.wordmapfile):
 			print "Fail to read training data!"
-			return 1
+			return False
 
 		self.M = self.ptrndata.M
 		self.V = self.ptrndata.V
 		
-		self.nw = [0] * self.V
-		for w in range(self.V):
-			self.nw[w] = [0] * self.K
+		self.nw = np.zeros((self.V,self.K),dtype=int)
+		self.nd = np.zeros((self.M,self.K),dtype=int)
 
-		self.nd = [0] * self.M
-		for m in range(self.M):
-			self.nd[m] = [0] * self.K
-	
-		self.nwsum = [0] * self.K
-	
-		self.ndsum = [0] * self.M
+		self.nwsum = np.zeros(self.K,dtype=int)
+		self.ndsum = np.zeros(self.M,dtype=int)
 
 		self.z = [0] * self.M
 
 		for m in range(self.ptrndata.M):
 			N = self.ptrndata.docs[m].length
-			self.z[m] = [0] * N
+			self.z[m] = np.zeros(N,dtype=int)
 
 			for n in range(N):
 				topic = int(random.random() * self.K)
@@ -343,66 +331,11 @@ class model(object):
 
 			# document i的单词总数
 			self.ndsum[m] = N
-	
-		# self.theta = [0] * self.M
-		# for m in range(self.M):
-		# 	self.theta[m] = [0] * self.K 
-		
-		# self.phi = [0] * self.K
-		# for k in range(self.K):
-		# 	self.phi[k] = [0] * self.V
+
 		self.theta = np.zeros((self.M,self.K))
 		self.phi = np.zeros((self.K,self.V))
 	
-		return 0
-
-  	def init_estc(self):
-  		self.p = [0] * self.K
-
-  		if self.load_model(self.model_name):
-  			print "Fail to load word-topic assignmetn file of the model!\n"
-  			return 1
-
-  		self.nw = [0] * self.V
-  		for w in range(self.V):
-  			self.nw[w] = [0] * self.K
-
-  		self.nd = [0] * self.M
-  		for m in range(self.M):
-  			self.nd = [0] * self.K
-
-		self.nwsum = [0] * self.K
-		
-		self.ndsum = [0] * self.M
-    	
-		for m in range(self.ptrndata.M):
-			N = self.ptrndata.docs[m].length
-			for n in range(N):
-				w = self.ptrndata.docs[m].words[n]
-				topic = self.z[m][n]
-
-				# word i被赋予topic j的次数
-				self.nw[w][topic] += 1
-				# document i中的单词被赋予topic j的次数
-				self.nd[m][topic] += 1
-				# 被赋予topic j的单词总数
-				self.nwsum[topic] += 1
-
-    		# document i的单词总数
-    		self.ndsum[m] = N
-
-		# self.theta = [0] * self.M
-		# for m in range(self.M):
-		# 	self.theta[m] = [0] * self.K
-
-		# self.phi = [0] * self.K
-		# for k in range(self.K):
-		# 	self.phi[k] = [0] * self.V
-		self.theta = np.zeros((self.M,self.K))
-		self.phi = np.zeros((self.K,self.V))
-
-
-		return 0
+		return True
 
 	def estimate(self):
 		if self.twords > 0:
@@ -410,23 +343,28 @@ class model(object):
 
 
 		print "Sampling %d iterations!" % self.niters
-
+		start = time.time()
 		last_iter = self.liter
 
 		for self.liter in range(last_iter + 1,self.niters + last_iter + 1):
-			print "Iteration %d ..." % self.liter
+			print "Iteration %d ... " % self.liter
 			for m in range(self.M):
 				for n in range(self.ptrndata.docs[m].length):
 					topic = self.sampling(m,n)
 					self.z[m][n] = topic
-				
+
 			if self.savestep > 0:
 				if self.liter % self.savestep == 0:
 					print "Saving the model at iteration %d ..." % self.liter
 					self.compute_theta()
 					self.compute_phi()
 					self.save_model(utils.generate_model_name(self.liter))
-
+			duration = time.time() - start
+			print "%lf per iteration" % (duration / self.liter)
+			
+			self.compute_theta()
+			self.compute_phi()
+			print "Perplexity = %f" % self.calc_est_perplexity()
 
  		print "Gibbs sampling completed!"
  		print "Saving the final model!"
@@ -437,7 +375,8 @@ class model(object):
 		self.save_model(utils.generate_model_name(-1))
 
 		print "Perplexity = %f" % self.calc_est_perplexity()
-
+	
+	''' Gibbs sampling for sampling topic '''
 	def sampling(self,m,n):
 		topic = self.z[m][n]
 		w = self.ptrndata.docs[m].words[n]
@@ -449,8 +388,10 @@ class model(object):
 		Vbeta = self.V * self.beta
 		Kalpha = self.K * self.alpha
 		
-		for k in range(self.K):
-			self.p[k] = (self.nw[w][k] + self.beta) / (self.nwsum[k] + Vbeta) * (self.nd[m][k] + self.alpha) / (self.ndsum[m] + Kalpha)
+		# for k in range(self.K):
+		# 	self.p[k] = (self.nw[w][k] + self.beta) / (self.nwsum[k] + Vbeta) * (self.nd[m][k] + self.alpha) / (self.ndsum[m] + Kalpha)
+
+		self.p = (self.nw[w] + self.beta) * (self.nd[m] + self.alpha) / ((self.nwsum + Vbeta) * (self.ndsum[m] + Kalpha))
 
 		for k in range(1,self.K):
 			self.p[k] += self.p[k - 1]
@@ -465,7 +406,7 @@ class model(object):
 		self.nd[m][topic] += 1
 		self.nwsum[topic] += 1
 		self.ndsum[m] += 1
-		
+
 		return topic
 
 	def compute_theta(self):
@@ -480,23 +421,17 @@ class model(object):
 				self.phi[k][w] = (self.nw[w][k] + self.beta) / (self.nwsum[k] + self.V * self.beta)
 
 	def init_inf(self):
-		self.p = [0] * self.K
+		self.p = np.zeros(self.K)
 
-		if self.load_model(self.model_name):
+		if not self.load_model(self.model_name):
 			print "Fail to load word-topic assignmetn file of the model!"
-			return 1
+			return False
 	
-		self.nw = [0] * self.V
-		for w in range(self.V):
-			self.nw[w] = [0] * self.K
+		self.nw = np.zeros((self.V,self.K),dtype=int)
+		self.nd = np.zeros((self.M,self.K),dtype=int)
 
-		self.nd = [0] * self.M
-		for w in range(self.M):
-			self.nd[w] = [0] * self.K
-
-		self.nwsum = [0] * self.K
-	
-		self.ndsum = [0] * self.M
+		self.nwsum = np.zeros(self.K,dtype=int)
+		self.ndsum = np.zeros(self.M,dtype=int)
 
 		for m in range(self.ptrndata.M):
 			N = self.ptrndata.docs[m].length
@@ -521,32 +456,27 @@ class model(object):
 		# 读入新数据进行推测
 		self.pnewdata = dataset()
 		if self.withrawstrs:
-			if self.pnewdata.read_newdata_withrawstrs(self.directory + self.dfile, self.directory + self.wordmapfile):
+			if not self.pnewdata.read_newdata_withrawstrs(self.directory + self.dfile, self.directory + self.wordmapfile):
 				print "Fail to read new data!"
+				return False
 		else: 
-			if self.pnewdata.read_newdata(self.directory + self.dfile,self.directory + self.wordmapfile):
+			if not self.pnewdata.read_newdata(self.directory + self.dfile,self.directory + self.wordmapfile):
 				print "Fail to read new data!"
-				return 1
+				return False
 
 		self.newM = self.pnewdata.M
 		self.newV = self.pnewdata.V
 
-		self.newnw = [0] * self.newV
-		for w in range(self.newV):
-			self.newnw[w] = [0] * self.K
-		
-		self.newnd = [0] * self.newM
-		for m in range(self.newM):
-			self.newnd[m] = [0] * self.K
+		self.newnw = np.zeros((self.newV,self.K))
+		self.newnd = np.zeros((self.newM,self.K))
 
-		self.newnwsum = [0] * self.K
-		
-		self.newndsum = [0] * self.newM
+		self.newnwsum = np.zeros(self.K)
+		self.newndsum = np.zeros(self.newM)
 	
 		self.newz = [0] * self.newM
 		for m in range(self.pnewdata.M):
 			N = self.pnewdata.docs[m].length
-			self.newz[m] = [0] * N
+			self.newz[m] = np.zeros(N)
 			for n in range(N):
 				w = self.pnewdata.docs[m].words[n]
 				_w = self.pnewdata._docs[m].words[n]
@@ -559,17 +489,10 @@ class model(object):
 
 			self.newndsum[m] = N
 
-		# self.newtheta = [0] * self.newM
-		# for m in range(self.newM):
-		# 	self.newtheta[m] = [0] * self.K
-	
-		# self.newphi = [0] * self.K
-		# for k in range(self.K):
-		# 	self.newphi[k] = [0] * self.newV
 		self.newtheta = np.zeros((self.newM,self.K))
 		self.newphi = np.zeros((self.K,self.newV))
 
-		return 0   
+		return True
 
 	def inference(self):
 		if self.twords > 0:

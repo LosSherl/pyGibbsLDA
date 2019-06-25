@@ -38,7 +38,7 @@ class dataset(object):
 		for item in pword2id:
 			fobj.write("%s %d\n" % (item,pword2id[item]))
 
-		return 0
+		return True
 
 	@staticmethod
 	def read_word2id(wordmapfile):
@@ -101,7 +101,7 @@ class dataset(object):
 				print "Invalid (empty) document!\n"
 				self.M = 0
 				self.V = 0
-				return 1
+				return False
 
 			pdoc = document(length)
 
@@ -115,13 +115,11 @@ class dataset(object):
 			self.add_doc(pdoc,i)
 	
 		fobj.close()
-
-		if dataset.write_wordmap(wordmapfile,word2id):
-			return 1
-	
+		if not dataset.write_wordmap(wordmapfile,word2id):
+			return False
 		self.V = len(word2id)
 	
-		return 0
+		return True
 
 	def read_newdata(self,dfile,wordmapfile):
 		word2id = dict()
@@ -131,7 +129,7 @@ class dataset(object):
 
 		if len(word2id) <= 0:
 			print "No word map available!\n"
-			return 1
+			return False
 
 		fobj = open(dfile,"r")
 
@@ -139,7 +137,7 @@ class dataset(object):
 
 		if self.M <= 0:
 			print "No document available!\n"
-			return 1
+			return False
 
 		self.docs = [document()] * self.M
 		self._docs = [document()] * self.M
@@ -155,7 +153,7 @@ class dataset(object):
 
 			for j in range(length):
 				if word2id.get(strtok.token(j),-1) >= 0:
-					if id2_id.get(word2id[strtok.token(j)]):
+					if id2_id.get(word2id[strtok.token(j)],-1) >= 0:
 						_id = id2_id[word2id[strtok.token(j)]]
 					else:
 						_id = len(id2_id)
@@ -163,8 +161,6 @@ class dataset(object):
 						self._id2id[_id] = word2id[strtok.token(j)]
 					doc.append(word2id[strtok.token(j)])
 					_doc.append(_id)
-					# if _id == 3234:
-					# 	print strtok.token(j)," ",word2id[strtok.token(j)]
 				else:
 					# word not found, i.e., word unseen in training data
 					pass
@@ -179,7 +175,7 @@ class dataset(object):
  		fobj.close()
 		self.V = len(id2_id)
 	
-		return 0
+		return True
 
 	def read_newdata_withrawstrs(self,dfile,wordmapfile):
 		word2id = dict()
@@ -189,7 +185,7 @@ class dataset(object):
 
 		if len(word2id) <= 0:
 			print "No word map available!\n"
-			return 1
+			return False
 		
 		fobj = open(dfile,"r")
 
@@ -197,7 +193,7 @@ class dataset(object):
 
 		if self.M <= 0:
 			print "No document available!\n"
-			return 1
+			return False
 
 		self.docs = [document()] * self.M
 		self._docs = [document()] * self.M
@@ -235,4 +231,4 @@ class dataset(object):
 		fobj.close()
 		self.V = len(id2_id)
 	
-		return 0
+		return True
